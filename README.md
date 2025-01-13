@@ -1,3 +1,7 @@
 # AQI-Infosys-springboard
 
-"C:\Users\DELL\OneDrive\Desktop\INFOSYS\poornima\AQI separate the column of state and city\Aire Quality Insight UI.mp4"
+
+
+
+https://github.com/user-attachments/assets/f5d448f8-9bc8-4c99-a571-898c51796c35
+
