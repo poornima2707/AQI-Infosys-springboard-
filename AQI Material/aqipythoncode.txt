@@ -1,0 +1,105 @@
+import numpy as np
+import pandas as pd
+from datetime import datetime
+
+# Step 1: Load the dataset
+df = pd.read_csv('aqi.csv')
+
+# Step 2: Display a few records of the original dataset
+print("Few records of original dataset:\n", df.head())
+
+# Step 3: Check for missing values
+print("Missing values in each column:\n", df.isnull().sum())
+
+# Step 4: Drop duplicate rows
+df.drop_duplicates(inplace=True)
+
+# Step 5: Replacing all instances of 0 with np.nan
+df.replace(0, np.nan, inplace=True)
+
+# Step 6: Fill missing values in numerical columns with the median of each column, rounded to 2 decimal places
+df.fillna(df.select_dtypes(include=[np.number]).median().round(2), inplace=True)
+
+# Step 7: Handling Outliers using IQR for numerical columns
+Q1 = df.select_dtypes(include=[np.number]).quantile(0.25)
+Q3 = df.select_dtypes(include=[np.number]).quantile(0.75)
+IQR = Q3 - Q1
+
+# Defining the lower and upper bounds for outliers
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+# Filter out outliers from numerical columns only
+df = df[~((df.select_dtypes(include=[np.number]) < lower_bound) |
+          (df.select_dtypes(include=[np.number]) > upper_bound)).any(axis=1)]
+
+# Step 8: Handling Data Inconsistencies (example: removing negative values or converting incorrect data types)
+df = df[df['aqi'] > 0]  # Ensure AQI values are positive
+df['pm2.5'] = pd.to_numeric(df['pm2.5'], errors='coerce')  # Convert PM2.5 to numeric, invalid entries become NaN
+
+# Step 9: Handling date format inconsistencies
+# Define a function to convert the 'Date' column using a custom format
+def parse_date(date_str):
+    try:
+        # Attempt parsing using multiple common formats
+        return pd.to_datetime(date_str, format='%d-%m-%Y', errors='coerce') or pd.to_datetime(date_str, format='%m-%d-%Y', errors='coerce')
+    except Exception as e:
+        return pd.NaT  # Return NaT for any invalid date formats
+
+# Apply the custom date parsing function
+df['date'] = df['date'].apply(parse_date)
+
+# Step 10: Display the cleaned dataset
+print("Cleaned Dataset:\n", df)
+
+# Step 11: Save the cleaned dataset to a new CSV file
+df.to_csv('cleaned_with_aqi.csv', index=False)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+Few records of original dataset:
+    state       city        date    aqi   pm2.5    pm10     no2    so2      o3
+0  Delhi  New Delhi  02-01-2015  231.0  273.52   42.48  179.12  66.03  188.79
+1  Delhi  New Delhi  07-01-2015  337.0  285.68  165.14   94.14   4.89   13.75
+2  Delhi  New Delhi  11-01-2015  221.0  172.27  100.36   47.35   1.06   86.43
+3  Delhi  New Delhi  18-01-2015  218.0  149.78  346.05   30.35  97.46   59.00
+4  Delhi  New Delhi  20-01-2015  301.0  155.13  389.70   19.27  15.85  168.83
+Missing values in each column:
+ state    0
+city     0
+date     0
+aqi      0
+pm2.5    0
+pm10     0
+no2      0
+so2      0
+o3       0
+dtype: int64
+Cleaned Dataset:
+             state       city       date    aqi   pm2.5    pm10     no2    so2  \
+0           Delhi  New Delhi 2015-01-02  231.0  273.52   42.48  179.12  66.03   
+1           Delhi  New Delhi 2015-01-07  337.0  285.68  165.14   94.14   4.89   
+2           Delhi  New Delhi 2015-01-11  221.0  172.27  100.36   47.35   1.06   
+3           Delhi  New Delhi 2015-01-18  218.0  149.78  346.05   30.35  97.46   
+4           Delhi  New Delhi 2015-01-20  301.0  155.13  389.70   19.27  15.85   
+...           ...        ...        ...    ...     ...     ...     ...    ...   
+9340  West Bengal    Kolkata 2022-12-08  271.0  298.24  250.34   19.83  66.90   
+9341  West Bengal    Kolkata 2022-12-15  328.0  290.24  257.25  178.09  51.63   
+9342  West Bengal    Kolkata 2022-12-20   97.0  120.20  161.69   64.43  94.25   
+9343  West Bengal    Kolkata 2022-12-23  362.0   62.90  114.79  107.48  78.82   
+9344  West Bengal    Kolkata 2022-12-25  134.0  192.49  244.01    4.97   5.52   
+
+          o3  
+0     188.79  
+1      13.75  
+2      86.43  
+3      59.00  
+4     168.83  
+...      ...  
+9340   77.77  
+9341  123.81  
+9342   79.62  
+9343  149.35  
+9344   66.15  
+
+[9345 rows x 9 columns]
+------------------------------------------------------------------------------------------------------
